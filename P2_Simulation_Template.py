@@ -14,18 +14,26 @@ potentiometer = potentiometer_interface()
 #---------------------------------------------------------------------------------
 
 # Required starting conditions:
-# Left potentiometer must be >50%. (as this is the end condition)
+# Left potentiometer must be >threshold. (as this is the end condition)
 
 # Once arm enters rotation phase, movement is controlled with right potentiometer
-# To end rotation phase, move left potentiometer below 50% threshold
+# To end rotation phase, move left potentiometer below  threshold
+
+# Once arm enters placement phase, movement is controlled with left potentiometer
+# Move the potentiometer between 50% and 100% for position 1, move to 100% for position 2
+# (Position 1 is in autoclave, position 2 is on top of autoclave)
 
 # Spawn location of container
-SPAWN_LOCATION = (0.7, 0, 0.05)
+SPAWN_LOCATION = (0.63, 0.05, 0.05)
 # Home location of arm
 HOME_LOCATION = (0.406, 0.0, 0.483)
 
 # Strength of grippers, when grabbing and releasing container
 GRIPPER_STRENGTH = 40
+
+# Sets threshold of left potentiometer
+POS_1_THRESHOLD = 0.5
+POS_2_THRESHOLD = 0.9
 
 # Tuple of all containers
 # In formate (id, size, colour)
@@ -65,6 +73,20 @@ def move_arm(coordinates):
     arm.move_arm(X, Y, Z)
     time.sleep(1)
 
+def check_left_potentiometer(threshold):
+    """Checks whether left potentiometer is greater than given threshold
+
+    Args:
+        threshold (float): A threshold from 0->1
+
+    Return:
+        is_larger (bool): True if left potentiometer is larger than threshold, otherwise false
+    """
+
+    left_pot = potentiometer.left()
+    is_larger = left_pot > threshold
+    return is_larger
+
 def spawn(x):
     """Spawn the container with specified ID
 
@@ -103,9 +125,8 @@ def rotate_base(c_id):
         arm.rotate_base(right_pot)
         time.sleep(0.5)
 
-        # Check if left potentiometer is below threashold of 50%
-        left_pot = potentiometer.left()
-        if left_pot < 0.5:
+        # Check if left potentiometer is below threashold
+        if check_left_potentiometer(POS_1_THRESHOLD):
             
             # Get checked container
             container = get_container(c_id)
@@ -126,15 +147,14 @@ def drop_off(c_id):
     size = container[1]
     colour = container[2]
 
-    # Wait until left potentiometer > 50%
-    while potentiometer.left() <= 0.5:
+    # Wait until left potentiometer is above threshold
+    while not check_left_potentiometer(POS_1_THRESHOLD):
         continue
     # Wait to assert correct position
     # (so that operator can move potentiometer full distance)
-    
     time.sleep(2)
 
-    if potentiometer.left == 1:
+    if check_left_potentiometer(POS_2_THRESHOLD):
         # Position 2
 
         # Activate autoclaves
@@ -144,31 +164,44 @@ def drop_off(c_id):
         # Open target autoclave
         arm.open_autoclave(colour)
 
+        time.sleep(1)
+
         # Rotate joints to place object in autoclave
-        arm.rotate_shoulder(20)
-        arm.rotate_elbow(-20)
+        arm.rotate_elbow(15)
+        arm.rotate_shoulder(25)
+
+        time.sleep(1)
 
         # Drop off object, by opening grippers
         arm.control_gripper(-GRIPPER_STRENGTH)
+
+        time.sleep(1)
 
         # Close target autoclave
         arm.open_autoclave(colour, False)
+
+        time.sleep(1)
         
-    else:
+    else: 
         # Position 1
 
         # Rotate joints to place object on top of autoclave
-        arm.rotate_shoulder(20)
-        arm.rotate_elbow(-20)
+        arm.rotate_elbow(-40)
+        arm.rotate_shoulder(50)
+
+        time.sleep(1)
 
         # Drop off object, by opening grippers
         arm.control_gripper(-GRIPPER_STRENGTH)
+
+        time.sleep(1)
 
     # Deactivate autoclaves for safety
     arm.deactivate_autoclaves()
     
 
 # Create randomized list of digits 1->6, this will be the cycle order
+# For simulation purposes only
 container_order = [1, 2, 3, 4, 5, 6]
 random.shuffle(container_order)
 print(container_order)

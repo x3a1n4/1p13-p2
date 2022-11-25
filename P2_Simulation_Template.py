@@ -84,7 +84,7 @@ def check_left_potentiometer(threshold):
     """
 
     left_pot = potentiometer.left()
-    is_larger = left_pot > threshold
+    is_larger = left_pot >= threshold
     return is_larger
 
 def spawn(x):
@@ -125,7 +125,7 @@ def rotate_base(c_id):
         arm.rotate_base(right_pot)
         time.sleep(0.5)
 
-        # Check if left potentiometer is below threashold
+        # Check if left potentiometer goes is below threashold
         if not check_left_potentiometer(POS_1_THRESHOLD):
             
             # Get checked container
@@ -211,15 +211,19 @@ def __main__():
     for container_id in container_order:
         # Spawn container
         spawn(container_id)
+        print("Spawned")
 
         # Pick up container
         pick_up()
+        print("Pick up")
 
         # Rotate base
         rotate_base(container_id)
+        print("Rotate base")
 
         # Drop off
         drop_off(container_id)
+        print("Drop off")
 
         # Return home
         arm.home()

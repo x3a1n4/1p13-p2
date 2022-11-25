@@ -126,7 +126,7 @@ def rotate_base(c_id):
         time.sleep(0.5)
 
         # Check if left potentiometer is below threashold
-        if check_left_potentiometer(POS_1_THRESHOLD):
+        if not check_left_potentiometer(POS_1_THRESHOLD):
             
             # Get checked container
             container = get_container(c_id)
